@@ -15,12 +15,13 @@ const API_BASE = "https://www.thesportsdb.com/api/v1/json/3/";
 
 // === Classi ===
 class Squadra {
-  constructor(id, nome, logo, lega, paese) {
+  constructor(id, nome, logo, lega, paese, sport) {
     this.id = id;
     this.nome = nome;
     this.logo = logo;
     this.lega = lega;
     this.paese = paese;
+    this.sport = sport;
   }
 }
 
@@ -80,7 +81,7 @@ async function cercaSquadre(query, sport = "") {
   if (!data.teams) return [];
   return data.teams.map(
     (t) =>
-      new Squadra(t.idTeam, t.strTeam, t.strBadge, t.strLeague, t.strCountry),
+      new Squadra(t.idTeam, t.strTeam, t.strBadge, t.strLeague, t.strCountry, t.strSport),
   );
 }
 
@@ -133,6 +134,7 @@ async function caricaDettagli(idTeam) {
 let preferiti = caricaPreferiti();
 let squadraSelezionataId =
   localStorage.getItem("sportshub_squadra_selezionata") || null;
+let sportSelezionato = "";
 
 function caricaPreferiti() {
   try {
@@ -149,6 +151,7 @@ function salvaPreferiti() {
     logo: p.logo,
     lega: p.lega,
     paese: p.paese,
+    sport: p.sport,
   }));
   localStorage.setItem("sportshub_preferiti", JSON.stringify(daSalvare));
 }
@@ -347,6 +350,7 @@ function aggiungiAPreferiti(squadra) {
     logo: squadra.logo,
     lega: squadra.lega,
     paese: squadra.paese,
+    sport: squadra.sport,
   });
   salvaPreferiti();
   renderPreferiti();
@@ -363,10 +367,21 @@ function renderPreferiti() {
       '<p class="text-secondary mb-4 fst-italic">Non hai ancora salvato nessuna squadra. Cercane una qui sopra e aggiungila ai preferiti.</p>';
     return;
   }
+
+  const preferitiFiltrati = sportSelezionato
+    ? preferiti.filter((p) => p.sport === sportSelezionato)
+    : preferiti;
+
+  if (preferitiFiltrati.length === 0) {
+    container.innerHTML =
+      '<p class="empty-message">Nessuna squadra preferita per questo sport.</p>';
+    return;
+  }
+
   const grid = document.createElement("div");
   grid.className = "grid-card";
 
-  for (const p of preferiti) {
+  for (const p of preferitiFiltrati) {
     const card = document.createElement("div");
     card.className = "squadra-card fade-in";
     if (p.id === squadraSelezionataId) card.classList.add("selezionata");
@@ -404,8 +419,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = $("#searchInput");
   const searchBtn = $("#searchBtn");
   const filtriBtn = document.querySelectorAll(".btn-filtro");
-
-  let sportSelezionato = "";
 
   async function eseguiRicerca() {
     const query = searchInput.value.trim();
@@ -447,6 +460,22 @@ document.addEventListener("DOMContentLoaded", () => {
       sportSelezionato = btn.dataset.sport;
       filtriBtn.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
+
+      // se i dettagli aperti appartengono a una squadra di un altro sport, nascondili
+      const squadraAperta = preferiti.find(
+        (p) => p.id === squadraSelezionataId,
+      );
+      if (
+        squadraAperta &&
+        sportSelezionato &&
+        squadraAperta.sport !== sportSelezionato
+      ) {
+        salvaSquadraSelezionata(null);
+        const dettagli = $("#dettagli-squadra-content");
+        if (dettagli) dettagli.innerHTML = "";
+      }
+
+      renderPreferiti();
       if (searchInput.value.trim()) eseguiRicerca();
     });
   });
