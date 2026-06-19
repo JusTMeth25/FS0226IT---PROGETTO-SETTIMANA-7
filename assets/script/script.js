@@ -81,7 +81,14 @@ async function cercaSquadre(query, sport = "") {
   if (!data.teams) return [];
   return data.teams.map(
     (t) =>
-      new Squadra(t.idTeam, t.strTeam, t.strBadge, t.strLeague, t.strCountry, t.strSport),
+      new Squadra(
+        t.idTeam,
+        t.strTeam,
+        t.strBadge,
+        t.strLeague,
+        t.strCountry,
+        t.strSport,
+      ),
   );
 }
 
@@ -134,7 +141,8 @@ async function caricaDettagli(idTeam) {
 let preferiti = caricaPreferiti();
 let squadraSelezionataId =
   localStorage.getItem("sportshub_squadra_selezionata") || null;
-let sportSelezionato = "";
+let sportSelezionato =
+  localStorage.getItem("sportshub_sport_selezionato") || "";
 
 function caricaPreferiti() {
   try {
@@ -163,6 +171,14 @@ function salvaSquadraSelezionata(id) {
     localStorage.setItem("sportshub_squadra_selezionata", id);
   } else {
     localStorage.removeItem("sportshub_squadra_selezionata");
+  }
+}
+function salvaSportSelezionato(sport) {
+  sportSelezionato = sport;
+  if (sport) {
+    localStorage.setItem("sportshub_sport_selezionato", sport);
+  } else {
+    localStorage.removeItem("sportshub_sport_selezionato");
   }
 }
 
@@ -420,6 +436,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchBtn = $("#searchBtn");
   const filtriBtn = document.querySelectorAll(".btn-filtro");
 
+  filtriBtn.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.sport === sportSelezionato);
+  });
+
   async function eseguiRicerca() {
     const query = searchInput.value.trim();
     if (!query) return;
@@ -457,7 +477,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   filtriBtn.forEach((btn) => {
     btn.addEventListener("click", () => {
-      sportSelezionato = btn.dataset.sport;
+      salvaSportSelezionato(btn.dataset.sport);
       filtriBtn.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
