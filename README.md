@@ -8,19 +8,21 @@ Progetto realizzato per la **Settimana 7** del corso FS0226IT, basato sull'API p
 
 ## Indice
 
-- [Funzionalità](#funzionalità)
-- [Stack tecnico](#stack-tecnico)
-- [Struttura del progetto](#struttura-del-progetto)
-- [Come avviarlo](#come-avviarlo)
-- [API utilizzata](#api-utilizzata)
-- [Architettura del codice](#architettura-del-codice)
-  - [Classi](#classi)
-  - [Chiamate API](#chiamate-api)
-  - [Stato e persistenza (localStorage)](#stato-e-persistenza-localstorage)
-  - [Funzioni di render](#funzioni-di-render)
-  - [Filtri per sport](#filtri-per-sport)
-  - [Debounce sulla ricerca](#debounce-sulla-ricerca)
-- [Possibili sviluppi futuri](#possibili-sviluppi-futuri)
+- [🏆 SportsHub](#-sportshub)
+  - [Indice](#indice)
+  - [Funzionalità](#funzionalità)
+  - [Stack tecnico](#stack-tecnico)
+  - [Struttura del progetto](#struttura-del-progetto)
+  - [Come avviarlo](#come-avviarlo)
+  - [API utilizzata](#api-utilizzata)
+  - [Architettura del codice](#architettura-del-codice)
+    - [Classi](#classi)
+    - [Chiamate API](#chiamate-api)
+    - [Stato e persistenza (localStorage)](#stato-e-persistenza-localstorage)
+    - [Funzioni di render](#funzioni-di-render)
+    - [Filtri per sport](#filtri-per-sport)
+    - [Debounce sulla ricerca](#debounce-sulla-ricerca)
+  - [Possibili sviluppi futuri](#possibili-sviluppi-futuri)
 
 ## Funzionalità
 
@@ -147,5 +149,4 @@ Il listener `input` sul campo di ricerca usa `debounce(eseguiRicerca, 400)`: ogn
 ## Possibili sviluppi futuri
 
 - Migrare i preferiti già salvati prima dell'introduzione del campo `sport` (oggi compaiono solo nel filtro "Tutti").
-- Persistere anche `sportSelezionato` in `localStorage`, per ricordare il filtro attivo al refresh.
 - Gestione paginazione/scroll infinito se una ricerca restituisce molte squadre.
