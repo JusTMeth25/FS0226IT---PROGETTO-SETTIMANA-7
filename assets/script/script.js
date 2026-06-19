@@ -179,7 +179,7 @@ function renderCardSquadre(squadre) {
     <div class="card-title">${s.nome}</div>
     <div class="card-subtitle">${s.lega || "Campionato ND"}</div>
     <div class="card-text">${s.paese || ""}</div>
-    <button class="btn btn-sm btn-outline-primary dettagli-btn">Dettagli</button>
+    <button class="btn btn-sm btn-outline-primary dettagli-btn">⭐ Aggiungi ai preferiti</button>
     `;
 
     card.querySelector(".dettagli-btn").addEventListener("click", (e) => {

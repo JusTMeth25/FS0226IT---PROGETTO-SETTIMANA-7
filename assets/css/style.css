@@ -37,7 +37,7 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: antiquewhite;
+  background-color: rgb(253, 244, 170);
   color: hsl(220, 60%, 25%);
 }
 
@@ -225,7 +225,55 @@ body {
   gap: 8px;
 }
 
+.preferita-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
 
+.preferita-wrapper .preferita-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.preferita-wrapper .preferita-header .badge-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.preferita-wrapper .preferita-header .info h3 {
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.preferita-wrapper .preferita-header .btn-rimuovi {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #dc3545;
+  transition: 0.2s;
+}
+.preferita-wrapper .preferita-header .btn-rimuovi:hover {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+.preferita-wrapper .eventi-container {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
 
 /* Fade in */
 .fade-in {
