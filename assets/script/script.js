@@ -54,6 +54,18 @@ class Evento {
     }
     return "VS";
   }
+
+  // esito ("vittoria" | "pareggio" | "sconfitta") dal punto di vista di nomeSquadra
+  // null se la partita non è ancora stata giocata (nessun punteggio)
+  getEsito(nomeSquadra) {
+    if (this.punteggioCasa === null || this.punteggioTrasferta === null)
+      return null;
+    if (this.punteggioCasa === this.punteggioTrasferta) return "pareggio";
+    const haVintoCasa = this.punteggioCasa > this.punteggioTrasferta;
+    const giocaInCasa = this.casa === nomeSquadra;
+    const haVinto = giocaInCasa ? haVintoCasa : !haVintoCasa;
+    return haVinto ? "vittoria" : "sconfitta";
+  }
 }
 
 // === API ===
@@ -117,21 +129,13 @@ async function caricaDettagli(idTeam) {
 
 // === Stato ===
 
-// variabile preferiti
-
 let preferiti = caricaPreferiti();
+let squadraSelezionataId =
+  localStorage.getItem("sportshub_squadra_selezionata") || null;
 
-// render preferiti
 function caricaPreferiti() {
   try {
-    const salvati = JSON.parse(
-      localStorage.getItem("sportshub_preferiti") || "[]",
-    );
-    salvati.forEach((s) => {
-      s.prossimi = [];
-      s.ultimi = [];
-    });
-    return salvati;
+    return JSON.parse(localStorage.getItem("sportshub_preferiti") || "[]");
   } catch {
     return [];
   }
@@ -148,11 +152,28 @@ function salvaPreferiti() {
   localStorage.setItem("sportshub_preferiti", JSON.stringify(daSalvare));
 }
 
-preferiti = caricaPreferiti();
+// ricorda quale squadra ha i dettagli aperti, così rimangono visibili al refresh
+function salvaSquadraSelezionata(id) {
+  squadraSelezionataId = id;
+  if (id) {
+    localStorage.setItem("sportshub_squadra_selezionata", id);
+  } else {
+    localStorage.removeItem("sportshub_squadra_selezionata");
+  }
+}
 
 // === Render ===
 function $(sel) {
   return document.querySelector(sel);
+}
+
+// funzione debounce per ritardo ricerca
+function debounce(fn, delay) {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
 }
 
 // funzione creaspinner
@@ -180,170 +201,15 @@ function mostraCaricamento() {
 }
 
 // funzione mostra errore (messaggio)
-function mostraErrore(messagio) {
+function mostraErrore(messaggio) {
   const container = $("#risultati-content");
   if (!container) return;
   container.innerHTML = "";
   container.appendChild(creaAlert(messaggio));
 }
 
-// funzione render squadre
-function renderCardSquadre(squadre) {
-  const container = $("#risultati-content");
-  if (!container) return;
-  container.innerHTML = "";
-
-  if (squadre.length === 0) {
-    container.innerHTML = `<p class="empty-message">Nessuna squadra trovata.</p>`;
-    return;
-  }
-  const grid = document.createElement("div");
-  grid.className = "grid-card";
-
-  for (const s of squadre) {
-    const card = document.createElement("div");
-    card.className = "squadra-card";
-    card.dataset.id = s.id;
-
-    const logoSrc = s.logo;
-
-    card.innerHTML = `
-    <img src="${logoSrc}" alt="${s.nome}" class="badge-img" loading="lazy">
-    <div class="card-title">${s.nome}</div>
-    <div class="card-subtitle">${s.lega || "Campionato ND"}</div>
-    <div class="card-text">${s.paese || ""}</div>
-    <button class="btn btn-sm btn-outline-primary preferito-btn">⭐ Aggiungi ai preferiti</button>
-    `;
-
-    card.querySelector(".preferito-btn").addEventListener("click", (e) => {
-      e.stopPropagation();
-      aggiungiAPreferiti(s);
-    });
-
-    grid.appendChild(card);
-  }
-  container.appendChild(grid);
-}
-
-// funzione mostra dettagli squadra
-
-async function aggiungiAPreferiti(squadra) {
-  if (preferiti.some((p) => p.id === squadra.id)) return;
-
-  try {
-    const { prossimi, ultimi } = await caricaDettagli(squadra.id);
-    preferiti.push({
-      id: squadra.id,
-      nome: squadra.nome,
-      logo: squadra.logo,
-      lega: squadra.lega,
-      paese: squadra.paese,
-      prossimi: prossimi,
-      ultimi: ultimi,
-    });
-    salvaPreferiti();
-    renderPreferiti();
-  } catch {
-    // se fallisce il caricamento degli eventi, aggiunge comunque senza eventi
-    preferiti.push({
-      id: squadra.id,
-      nome: squadra.nome,
-      logo: squadra.logo,
-      lega: squadra.lega,
-      paese: squadra.paese,
-      prossimi: [],
-      ultimi: [],
-    });
-    salvaPreferiti();
-    renderPreferiti();
-  }
-}
-
-// async function mostraDettagli(idTeam, nome, logoSrc) {
-//   const detSection = $("#dettagli-section");
-//   const detContent = $("#dettagli-content");
-//   if (!detSection || !detContent) return;
-
-//   // nasconde i risultati, mostra i dettagli
-//   $("#risultati-section").hidden = true;
-//   detSection.hidden = false;
-
-//   // svuota e mostra lo spinner
-//   detContent.innerHTML = "";
-//   detContent.appendChild(creaSpinner());
-
-//   try {
-//     const { prossimi, ultimi } = await caricaDettagli(idTeam);
-//     detContent.innerHTML = "";
-
-//     // Intestazione squadra
-//     const header = document.createElement("div");
-//     header.className = "squadra-header fade-in";
-
-//     const img = document.createElement("img");
-//     img.src = logoSrc;
-//     img.alt = nome;
-//     img.className = "badge-img";
-//     header.appendChild(img);
-
-//     const infoDiv = document.createElement("div");
-//     infoDiv.className = "info";
-//     const h2 = document.createElement("h2");
-//     h2.textContent = nome;
-//     infoDiv.appendChild(h2);
-//     header.appendChild(infoDiv);
-
-//     detContent.appendChild(header);
-
-//     // Prossimi eventi
-//     const prossimiSection = document.createElement("div");
-//     prossimiSection.className = "eventi-section fade-in";
-
-//     const h3Next = document.createElement("h3");
-//     h3Next.innerHTML =
-//       '<i class="bi bi-calendar-event text-primary"></i> Prossimi eventi';
-//     prossimiSection.appendChild(h3Next);
-
-//     if (prossimi.length === 0) {
-//       const p = document.createElement("p");
-//       p.className = "empty-message";
-//       p.textContent = "Nessun evento in programma";
-//       prossimiSection.appendChild(p);
-//     } else {
-//       for (const e of prossimi) {
-//         prossimiSection.appendChild(creaCardEvento(e));
-//       }
-//     }
-//     detContent.appendChild(prossimiSection);
-
-//     // Ultimi risultati
-//     const ultimiSection = document.createElement("div");
-//     ultimiSection.className = "eventi-section fade-in mt-4";
-
-//     const h3Last = document.createElement("h3");
-//     h3Last.innerHTML =
-//       '<i class="bi bi-trophy text-warning"></i> Ultimi risultati';
-//     ultimiSection.appendChild(h3Last);
-
-//     if (ultimi.length === 0) {
-//       const p = document.createElement("p");
-//       p.className = "empty-message";
-//       p.textContent = "Nessun risultato disponibile";
-//       ultimiSection.appendChild(p);
-//     } else {
-//       for (const e of ultimi) {
-//         ultimiSection.appendChild(creaCardEvento(e));
-//       }
-//     }
-//     detContent.appendChild(ultimiSection);
-//   } catch (err) {
-//     detContent.innerHTML = "";
-//     detContent.appendChild(creaAlert(`Errore nel caricamento: ${err.message}`));
-//   }
-// }
-
-// crea una card evento con DOM
-function creaCardEvento(evento) {
+// crea una card evento; se nomeSquadra è fornito, colora il punteggio in base all'esito
+function creaCardEvento(evento, nomeSquadra) {
   const card = document.createElement("div");
   card.className = "evento-card";
 
@@ -361,14 +227,131 @@ function creaCardEvento(evento) {
   card.appendChild(left);
 
   const punteggio = document.createElement("div");
-  punteggio.className = "punteggio";
+  const esito = nomeSquadra ? evento.getEsito(nomeSquadra) : null;
+  punteggio.className = esito ? `punteggio punteggio-${esito}` : "punteggio";
   punteggio.textContent = evento.getPunteggio();
   card.appendChild(punteggio);
 
   return card;
 }
 
-//  render preferiti con eventi
+// mostra prossimi eventi + ultimi risultati di una squadra
+async function mostraDettagliSquadra(squadra) {
+  const container = $("#dettagli-squadra-content");
+  if (!container) return;
+
+  salvaSquadraSelezionata(squadra.id);
+
+  container.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "risultato-card fade-in";
+  card.innerHTML = `
+    <div class="risultato-header">
+      <img src="${squadra.logo}" alt="${squadra.nome}" class="badge-img">
+      <div class="info">
+        <h3>${squadra.nome}</h3>
+        <p>${squadra.lega || "Campionato ND"} - ${squadra.paese || ""}</p>
+      </div>
+    </div>
+    <div class="eventi-colonne">
+      <div>
+        <h4>Prossimi eventi</h4>
+        <div class="lista-prossimi"></div>
+      </div>
+      <div>
+        <h4>Ultimi risultati</h4>
+        <div class="lista-ultimi"></div>
+      </div>
+    </div>
+  `;
+  card.querySelector(".lista-prossimi").appendChild(creaSpinner());
+  card.querySelector(".lista-ultimi").appendChild(creaSpinner());
+  container.appendChild(card);
+
+  try {
+    const { prossimi, ultimi } = await caricaDettagli(squadra.id);
+    const prossimiDiv = card.querySelector(".lista-prossimi");
+    const ultimiDiv = card.querySelector(".lista-ultimi");
+
+    prossimiDiv.innerHTML = prossimi.length
+      ? ""
+      : '<p class="empty-message">Nessun evento in programma</p>';
+    prossimi.forEach((e) =>
+      prossimiDiv.appendChild(creaCardEvento(e, squadra.nome)),
+    );
+
+    ultimiDiv.innerHTML = ultimi.length
+      ? ""
+      : '<p class="empty-message">Nessun risultato disponibile</p>';
+    ultimi.forEach((e) =>
+      ultimiDiv.appendChild(creaCardEvento(e, squadra.nome)),
+    );
+  } catch {
+    card.querySelector(".lista-prossimi").innerHTML =
+      '<p class="empty-message">Errore nel caricamento</p>';
+    card.querySelector(".lista-ultimi").innerHTML =
+      '<p class="empty-message">Errore nel caricamento</p>';
+  }
+}
+
+// render squadre trovate: solo card con logo/nome/lega/paese + bottone preferiti
+function renderRisultati(squadre) {
+  const container = $("#risultati-content");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (squadre.length === 0) {
+    container.innerHTML = `<p class="empty-message">Nessuna squadra trovata.</p>`;
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "grid-card";
+
+  for (const s of squadre) {
+    const card = document.createElement("div");
+    card.className = "squadra-card fade-in";
+
+    const giaPreferita = preferiti.some((p) => p.id === s.id);
+
+    card.innerHTML = `
+      <img src="${s.logo}" alt="${s.nome}" class="badge-img" loading="lazy">
+      <div class="card-title">${s.nome}</div>
+      <div class="card-subtitle">${s.lega || "Campionato ND"}</div>
+      <div class="card-text">${s.paese || ""}</div>
+      <button class="btn btn-sm btn-outline-primary preferito-btn" ${giaPreferita ? "disabled" : ""}>
+        ${giaPreferita ? "✓ Nei preferiti" : "⭐ Aggiungi ai preferiti"}
+      </button>
+    `;
+
+    const btn = card.querySelector(".preferito-btn");
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      aggiungiAPreferiti(s);
+      btn.disabled = true;
+      btn.textContent = "✓ Nei preferiti";
+      mostraDettagliSquadra(s);
+    });
+
+    grid.appendChild(card);
+  }
+  container.appendChild(grid);
+}
+
+function aggiungiAPreferiti(squadra) {
+  if (preferiti.some((p) => p.id === squadra.id)) return;
+  preferiti.push({
+    id: squadra.id,
+    nome: squadra.nome,
+    logo: squadra.logo,
+    lega: squadra.lega,
+    paese: squadra.paese,
+  });
+  salvaPreferiti();
+  renderPreferiti();
+}
+
+// render preferiti: card semplice, click sulla card mostra i dettagli sotto "Squadre trovate"
 function renderPreferiti() {
   const container = $("#preferiti-content");
   if (!container) return;
@@ -379,106 +362,40 @@ function renderPreferiti() {
       '<p class="text-secondary mb-4 fst-italic">Non hai ancora salvato nessuna squadra. Cercane una qui sopra e aggiungila ai preferiti.</p>';
     return;
   }
+  const grid = document.createElement("div");
+  grid.className = "grid-card";
+
   for (const p of preferiti) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "preferita-wrapper fade-in";
+    const card = document.createElement("div");
+    card.className = "squadra-card fade-in";
+    if (p.id === squadraSelezionataId) card.classList.add("selezionata");
 
-    const header = document.createElement("div");
-    header.className = "preferita-header";
+    card.innerHTML = `
+      <img src="${p.logo}" alt="${p.nome}" class="badge-img">
+      <div class="card-title">${p.nome}</div>
+      <div class="card-subtitle">${p.lega || "Campionato ND"}</div>
+      <div class="card-text">${p.paese || ""}</div>
+      <button class="btn btn-rimuovi-card"><i class="bi bi-trash"></i> Rimuovi</button>
+    `;
 
-    const img = document.createElement("img");
-    img.src = p.logo;
-    img.alt = p.nome;
-    img.className = "badge-img";
-    header.appendChild(img);
+    card.addEventListener("click", () => mostraDettagliSquadra(p));
 
-    const info = document.createElement("div");
-    info.className = "info";
-    const h3 = document.createElement("h3");
-    h3.textContent = p.nome;
-    info.appendChild(h3);
-    const pLeg = document.createElement("p");
-    pLeg.textContent = `${p.lega || "Campionato ND"} - ${p.paese || ""}`;
-    info.appendChild(pLeg);
-    header.appendChild(info);
-
-    const btnRimuovi = document.createElement("button");
-    btnRimuovi.className = "btn-rimuovi";
-    btnRimuovi.innerHTML = '<i class="bi bi-x-lg"></i>';
-    btnRimuovi.title = "Rimuovi dai preferiti";
-    btnRimuovi.addEventListener("click", () => {
+    card.querySelector(".btn-rimuovi-card").addEventListener("click", (e) => {
+      e.stopPropagation();
       preferiti = preferiti.filter((x) => x.id !== p.id);
       salvaPreferiti();
+      if (squadraSelezionataId === p.id) {
+        salvaSquadraSelezionata(null);
+        const dettagli = $("#dettagli-squadra-content");
+        if (dettagli) dettagli.innerHTML = "";
+      }
       renderPreferiti();
     });
-    header.appendChild(btnRimuovi);
-    wrapper.appendChild(header);
-    // Eventi container
-    const eventiContainer = document.createElement("div");
-    eventiContainer.className = "eventi-container";
 
-    // Prossimi eventi
-    const h3Next = document.createElement("h3");
-    h3Next.innerHTML =
-      '<i class="bi bi-calendar-event text-primary"></i> Prossimi eventi';
-    eventiContainer.appendChild(h3Next);
-
-    if (p.prossimi.length === 0) {
-      const pMsg = document.createElement("p");
-      pMsg.className = "empty-message";
-      pMsg.textContent = "Nessun evento in programma";
-      eventiContainer.appendChild(pMsg);
-    } else {
-      for (const e of p.prossimi) {
-        eventiContainer.appendChild(creaCardEvento(e));
-      }
-    }
-
-    //   Ultimi risultati
-    const h3Last = document.createElement("h3");
-    h3Last.innerHTML =
-      '<i class="bi bi-trophy text-warning"></i> Ultimi risultati';
-    eventiContainer.appendChild(h3Last);
-
-    if (p.ultimi.length === 0) {
-      const pMsg = document.createElement("p");
-      pMsg.className = "empty-message";
-      pMsg.textContent = "Nessun risultato disponibile";
-      eventiContainer.appendChild(pMsg);
-    } else {
-      for (const e of p.ultimi) {
-        eventiContainer.appendChild(creaCardEvento(e));
-      }
-    }
-    wrapper.appendChild(eventiContainer);
-    container.appendChild(wrapper);
+    grid.appendChild(card);
   }
+  container.appendChild(grid);
 }
-
-// Ricarica eventi per i preferiti al refresh
-async function ricaricaEventiPreferiti() {
-  const promises = preferiti.map(async (p) => {
-    try {
-      const { prossimi, ultimi } = await caricaDettagli(p.id);
-      p.prossimi = prossimi;
-      p.ultimi = ultimi;
-    } catch {
-      p.prossimi = [];
-      p.ultimi = [];
-    }
-  });
-  await Promise.all(promises);
-  renderPreferiti();
-}
-
-// funzione che nasconde i dettagli e torna ai risultati
-// function nascondiDettagli() {
-//   const detSection = $("#dettagli-section");
-//   const risSection = $("#risultati-section");
-
-//   if (detSection) detSection.hidden = true;
-//   if (risSection) risSection.hidden = false;
-// }
 
 // === Eventi ===
 
@@ -494,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const squadre = await cercaSquadre(query);
-      renderCardSquadre(squadre);
+      renderRisultati(squadre);
     } catch (err) {
       mostraErrore(err.message);
     }
@@ -509,8 +426,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  const eseguiRicercaDebounce = debounce(eseguiRicerca, 400);
+
+  searchInput?.addEventListener("input", () => {
+    const query = searchInput.value.trim();
+    if (!query) {
+      $("#risultati-content").innerHTML =
+        '<p class="text-secondary mb-4 fst-italic">Inizia cercando una squadra qui sopra.</p>';
+      return;
+    }
+    eseguiRicercaDebounce();
+  });
+
   renderPreferiti();
-  if (preferiti.length > 0) {
-    ricaricaEventiPreferiti();
+
+  // se al refresh era aperta una squadra preferita, mostra di nuovo i suoi dettagli
+  const preferitaSelezionata = preferiti.find(
+    (p) => p.id === squadraSelezionataId,
+  );
+  if (preferitaSelezionata) {
+    mostraDettagliSquadra(preferitaSelezionata);
   }
 });
