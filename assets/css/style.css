@@ -1,8 +1,9 @@
 /* SportsHub — Week Project Settimana VII
    Reset minimale + tipografia di base. Aggiungi qui le tue regole. */
 
-
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -26,5 +27,59 @@ body {
   text-align: center;
 }
 
-
 /* Aggiungi qui le tue regole per: form, risultati, card squadra, eventi. */
+
+.btn-primary {
+  background-color: white;
+  color: hsl(220, 60%, 25%);
+  padding: 8px 20px;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  background-color: antiquewhite;
+  color: hsl(220, 60%, 25%);
+}
+
+.search-bar {
+  max-width: 500px;
+  width: 100%;
+}
+
+.search-bar input {
+  width: 100%;
+}
+
+/* Le tue squadre preferite */
+.risultati {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.risultati .card {
+  flex: 1 1 calc(33.333% - 40px);
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.risultati .card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Squadre trovate */
+.dettagli {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
