@@ -117,6 +117,39 @@ async function caricaDettagli(idTeam) {
 
 // === Stato ===
 
+// variabile preferiti
+
+let preferiti = caricaPreferiti();
+
+// render preferiti
+function caricaPreferiti() {
+  try {
+    const salvati = JSON.parse(
+      localStorage.getItem("sportshub_preferiti") || "[]",
+    );
+    salvati.forEach((s) => {
+      s.prossimi = [];
+      s.ultimi = [];
+    });
+    return salvati;
+  } catch {
+    return [];
+  }
+}
+
+function salvaPreferiti() {
+  const daSalvare = preferiti.map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    logo: p.logo,
+    lega: p.lega,
+    paese: p.paese,
+  }));
+  localStorage.setItem("sportshub_preferiti", JSON.stringify(daSalvare));
+}
+
+preferiti = caricaPreferiti();
+
 // === Render ===
 function $(sel) {
   return document.querySelector(sel);
@@ -179,12 +212,12 @@ function renderCardSquadre(squadre) {
     <div class="card-title">${s.nome}</div>
     <div class="card-subtitle">${s.lega || "Campionato ND"}</div>
     <div class="card-text">${s.paese || ""}</div>
-    <button class="btn btn-sm btn-outline-primary dettagli-btn">⭐ Aggiungi ai preferiti</button>
+    <button class="btn btn-sm btn-outline-primary preferito-btn">⭐ Aggiungi ai preferiti</button>
     `;
 
-    card.querySelector(".dettagli-btn").addEventListener("click", (e) => {
+    card.querySelector(".preferito-btn").addEventListener("click", (e) => {
       e.stopPropagation();
-      mostraDettagli(s.id, s.nome, logoSrc);
+      aggiungiAPreferiti(s);
     });
 
     grid.appendChild(card);
@@ -193,88 +226,121 @@ function renderCardSquadre(squadre) {
 }
 
 // funzione mostra dettagli squadra
-async function mostraDettagli(idTeam, nome, logoSrc) {
-  const detSection = $("#dettagli-section");
-  const detContent = $("#dettagli-content");
-  if (!detSection || !detContent) return;
 
-  // nasconde i risultati, mostra i dettagli
-  $("#risultati-section").hidden = true;
-  detSection.hidden = false;
-
-  // svuota e mostra lo spinner
-  detContent.innerHTML = "";
-  detContent.appendChild(creaSpinner());
+async function aggiungiAPreferiti(squadra) {
+  if (preferiti.some((p) => p.id === squadra.id)) return;
 
   try {
-    const { prossimi, ultimi } = await caricaDettagli(idTeam);
-    detContent.innerHTML = "";
-
-    // Intestazione squadra
-    const header = document.createElement("div");
-    header.className = "squadra-header fade-in";
-
-    const img = document.createElement("img");
-    img.src = logoSrc;
-    img.alt = nome;
-    img.className = "badge-img";
-    header.appendChild(img);
-
-    const infoDiv = document.createElement("div");
-    infoDiv.className = "info";
-    const h2 = document.createElement("h2");
-    h2.textContent = nome;
-    infoDiv.appendChild(h2);
-    header.appendChild(infoDiv);
-
-    detContent.appendChild(header);
-
-    // Prossimi eventi
-    const prossimiSection = document.createElement("div");
-    prossimiSection.className = "eventi-section fade-in";
-
-    const h3Next = document.createElement("h3");
-    h3Next.innerHTML =
-      '<i class="bi bi-calendar-event text-primary"></i> Prossimi eventi';
-    prossimiSection.appendChild(h3Next);
-
-    if (prossimi.length === 0) {
-      const p = document.createElement("p");
-      p.className = "empty-message";
-      p.textContent = "Nessun evento in programma";
-      prossimiSection.appendChild(p);
-    } else {
-      for (const e of prossimi) {
-        prossimiSection.appendChild(creaCardEvento(e));
-      }
-    }
-    detContent.appendChild(prossimiSection);
-
-    // Ultimi risultati
-    const ultimiSection = document.createElement("div");
-    ultimiSection.className = "eventi-section fade-in mt-4";
-
-    const h3Last = document.createElement("h3");
-    h3Last.innerHTML =
-      '<i class="bi bi-trophy text-warning"></i> Ultimi risultati';
-    ultimiSection.appendChild(h3Last);
-
-    if (ultimi.length === 0) {
-      const p = document.createElement("p");
-      p.className = "empty-message";
-      p.textContent = "Nessun risultato disponibile";
-      ultimiSection.appendChild(p);
-    } else {
-      for (const e of ultimi) {
-        ultimiSection.appendChild(creaCardEvento(e));
-      }
-    }
-    detContent.appendChild(ultimiSection);
-  } catch (err) {
-    detContent.innerHTML = "";
-    detContent.appendChild(creaAlert(`Errore nel caricamento: ${err.message}`));
+    const { prossimi, ultimi } = await caricaDettagli(squadra.id);
+    preferiti.push({
+      id: squadra.id,
+      nome: squadra.nome,
+      logo: squadra.logo,
+      lega: squadra.lega,
+      paese: squadra.paese,
+      prossimi: prossimi,
+      ultimi: ultimi,
+    });
+    salvaPreferiti();
+    renderPreferiti();
+  } catch {
+    // se fallisce il caricamento degli eventi, aggiunge comunque senza eventi
+    preferiti.push({
+      id: squadra.id,
+      nome: squadra.nome,
+      logo: squadra.logo,
+      lega: squadra.lega,
+      paese: squadra.paese,
+      prossimi: [],
+      ultimi: [],
+    });
+    salvaPreferiti();
+    renderPreferiti();
   }
 }
+
+// async function mostraDettagli(idTeam, nome, logoSrc) {
+//   const detSection = $("#dettagli-section");
+//   const detContent = $("#dettagli-content");
+//   if (!detSection || !detContent) return;
+
+//   // nasconde i risultati, mostra i dettagli
+//   $("#risultati-section").hidden = true;
+//   detSection.hidden = false;
+
+//   // svuota e mostra lo spinner
+//   detContent.innerHTML = "";
+//   detContent.appendChild(creaSpinner());
+
+//   try {
+//     const { prossimi, ultimi } = await caricaDettagli(idTeam);
+//     detContent.innerHTML = "";
+
+//     // Intestazione squadra
+//     const header = document.createElement("div");
+//     header.className = "squadra-header fade-in";
+
+//     const img = document.createElement("img");
+//     img.src = logoSrc;
+//     img.alt = nome;
+//     img.className = "badge-img";
+//     header.appendChild(img);
+
+//     const infoDiv = document.createElement("div");
+//     infoDiv.className = "info";
+//     const h2 = document.createElement("h2");
+//     h2.textContent = nome;
+//     infoDiv.appendChild(h2);
+//     header.appendChild(infoDiv);
+
+//     detContent.appendChild(header);
+
+//     // Prossimi eventi
+//     const prossimiSection = document.createElement("div");
+//     prossimiSection.className = "eventi-section fade-in";
+
+//     const h3Next = document.createElement("h3");
+//     h3Next.innerHTML =
+//       '<i class="bi bi-calendar-event text-primary"></i> Prossimi eventi';
+//     prossimiSection.appendChild(h3Next);
+
+//     if (prossimi.length === 0) {
+//       const p = document.createElement("p");
+//       p.className = "empty-message";
+//       p.textContent = "Nessun evento in programma";
+//       prossimiSection.appendChild(p);
+//     } else {
+//       for (const e of prossimi) {
+//         prossimiSection.appendChild(creaCardEvento(e));
+//       }
+//     }
+//     detContent.appendChild(prossimiSection);
+
+//     // Ultimi risultati
+//     const ultimiSection = document.createElement("div");
+//     ultimiSection.className = "eventi-section fade-in mt-4";
+
+//     const h3Last = document.createElement("h3");
+//     h3Last.innerHTML =
+//       '<i class="bi bi-trophy text-warning"></i> Ultimi risultati';
+//     ultimiSection.appendChild(h3Last);
+
+//     if (ultimi.length === 0) {
+//       const p = document.createElement("p");
+//       p.className = "empty-message";
+//       p.textContent = "Nessun risultato disponibile";
+//       ultimiSection.appendChild(p);
+//     } else {
+//       for (const e of ultimi) {
+//         ultimiSection.appendChild(creaCardEvento(e));
+//       }
+//     }
+//     detContent.appendChild(ultimiSection);
+//   } catch (err) {
+//     detContent.innerHTML = "";
+//     detContent.appendChild(creaAlert(`Errore nel caricamento: ${err.message}`));
+//   }
+// }
 
 // crea una card evento con DOM
 function creaCardEvento(evento) {
@@ -302,21 +368,123 @@ function creaCardEvento(evento) {
   return card;
 }
 
-// funzione che nasconde i dettagli e torna ai risultati
-function nascondiDettagli() {
-  const detSection = $("#dettagli-section");
-  const risSection = $("#risultati-section");
+//  render preferiti con eventi
+function renderPreferiti() {
+  const container = $("#preferiti-content");
+  if (!container) return;
+  container.innerHTML = "";
 
-  if (detSection) detSection.hidden = true;
-  if (risSection) risSection.hidden = false;
+  if (preferiti.length === 0) {
+    container.innerHTML =
+      '<p class="text-secondary mb-4 fst-italic">Non hai ancora salvato nessuna squadra. Cercane una qui sopra e aggiungila ai preferiti.</p>';
+    return;
+  }
+  for (const p of preferiti) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "preferita-wrapper fade-in";
+
+    const header = document.createElement("div");
+    header.className = "preferita-header";
+
+    const img = document.createElement("img");
+    img.src = p.logo;
+    img.alt = p.nome;
+    img.className = "badge-img";
+    header.appendChild(img);
+
+    const info = document.createElement("div");
+    info.className = "info";
+    const h3 = document.createElement("h3");
+    h3.textContent = p.nome;
+    info.appendChild(h3);
+    const pLeg = document.createElement("p");
+    pLeg.textContent = `${p.lega || "Campionato ND"} - ${p.paese || ""}`;
+    info.appendChild(pLeg);
+    header.appendChild(info);
+
+    const btnRimuovi = document.createElement("button");
+    btnRimuovi.className = "btn-rimuovi";
+    btnRimuovi.innerHTML = '<i class="bi bi-x-lg"></i>';
+    btnRimuovi.title = "Rimuovi dai preferiti";
+    btnRimuovi.addEventListener("click", () => {
+      preferiti = preferiti.filter((x) => x.id !== p.id);
+      salvaPreferiti();
+      renderPreferiti();
+    });
+    header.appendChild(btnRimuovi);
+    wrapper.appendChild(header);
+    // Eventi container
+    const eventiContainer = document.createElement("div");
+    eventiContainer.className = "eventi-container";
+
+    // Prossimi eventi
+    const h3Next = document.createElement("h3");
+    h3Next.innerHTML =
+      '<i class="bi bi-calendar-event text-primary"></i> Prossimi eventi';
+    eventiContainer.appendChild(h3Next);
+
+    if (p.prossimi.length === 0) {
+      const pMsg = document.createElement("p");
+      pMsg.className = "empty-message";
+      pMsg.textContent = "Nessun evento in programma";
+      eventiContainer.appendChild(pMsg);
+    } else {
+      for (const e of p.prossimi) {
+        eventiContainer.appendChild(creaCardEvento(e));
+      }
+    }
+
+    //   Ultimi risultati
+    const h3Last = document.createElement("h3");
+    h3Last.innerHTML =
+      '<i class="bi bi-trophy text-warning"></i> Ultimi risultati';
+    eventiContainer.appendChild(h3Last);
+
+    if (p.ultimi.length === 0) {
+      const pMsg = document.createElement("p");
+      pMsg.className = "empty-message";
+      pMsg.textContent = "Nessun risultato disponibile";
+      eventiContainer.appendChild(pMsg);
+    } else {
+      for (const e of p.ultimi) {
+        eventiContainer.appendChild(creaCardEvento(e));
+      }
+    }
+    wrapper.appendChild(eventiContainer);
+    container.appendChild(wrapper);
+  }
 }
+
+// Ricarica eventi per i preferiti al refresh
+async function ricaricaEventiPreferiti() {
+  const promises = preferiti.map(async (p) => {
+    try {
+      const { prossimi, ultimi } = await caricaDettagli(p.id);
+      p.prossimi = prossimi;
+      p.ultimi = ultimi;
+    } catch {
+      p.prossimi = [];
+      p.ultimi = [];
+    }
+  });
+  await Promise.all(promises);
+  renderPreferiti();
+}
+
+// funzione che nasconde i dettagli e torna ai risultati
+// function nascondiDettagli() {
+//   const detSection = $("#dettagli-section");
+//   const risSection = $("#risultati-section");
+
+//   if (detSection) detSection.hidden = true;
+//   if (risSection) risSection.hidden = false;
+// }
 
 // === Eventi ===
 
 document.addEventListener("DOMContentLoaded", () => {
   const searchInput = $("#searchInput");
   const searchBtn = $("#searchBtn");
-  const tornaBtn = $("#tornaBtn");
 
   async function eseguiRicerca() {
     const query = searchInput.value.trim();
@@ -341,5 +509,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  tornaBtn?.addEventListener("click", nascondiDettagli);
+  renderPreferiti();
+  if (preferiti.length > 0) {
+    ricaricaEventiPreferiti();
+  }
 });

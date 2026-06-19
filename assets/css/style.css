@@ -275,6 +275,10 @@ body {
   border-top: 1px solid #eee;
 }
 
+.preferito-btn:hover {
+  background-color: orange !important;
+}
+
 /* Fade in */
 .fade-in {
   animation: fadeIn 0.3s ease-in;
