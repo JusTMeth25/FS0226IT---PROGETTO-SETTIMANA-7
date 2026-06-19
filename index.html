@@ -7,6 +7,7 @@
   <title>SportsHub — Eventi sportivi</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 
@@ -20,8 +21,9 @@
         <p>Cerca una squadra, scopri prossime partite e ultimi risultati.</p>
       </div>
       <div class="search-bar d-flex gap-2 mx-auto">
-        <input class="form-control" type="text" placeholder="es. Arsenal, Lakers, Real Mardid..." aria-label="default input example">
-        <button class="btn btn-primary">Cerca</button>
+        <input class="form-control" type="text" id="searchInput" placeholder="es. Arsenal, Lakers, Real Mardid..."
+          aria-label="Cerca squadra">
+        <button class="btn btn-primary" id="searchBtn">Cerca</button>
       </div>
     </div>
   </header>
@@ -30,14 +32,25 @@
 
     <section id="risultati-section">
       <!-- Spinner, errore, lista risultati ricerca squadre -->
-       <h2 class="risultati">⭐ Le tue squadre preferite</h2>
-       <p class="text-secondary mb-4 fst-italic">Non hai ancora salvato nessuna squadra. Cercane una qui sopra e aggiungila ai preferiti.</p>
-         <h2 class="dettagli">Squadre trovate</h2>
-       <p class="text-secondary mb-4 fst-italic">Inizia cercando una squadra qui sopra.</p>
+      <h2 class="risultati">⭐ Le tue squadre preferite</h2>
+      <div id="preferiti-content">
+        <p class="text-secondary mb-4 fst-italic">Non hai ancora salvato nessuna squadra. Cercane una qui sopra e
+          aggiungila ai preferiti.</p>
+      </div>
+      <h2 class="dettagli">Squadre trovate</h2>
+      <div id="risultati-content">
+        <p class="text-secondary mb-4 fst-italic">Inizia cercando una squadra qui sopra.</p>
+      </div>
     </section>
 
     <section id="dettagli-section" hidden>
       <!-- Visibile dopo click su una squadra: prossimi eventi + ultimi risultati -->
+      <button class="btn btn-outline-secondary mb-3" id="tornaBtn">
+        <i class="bi bi-arrow-left"></i>Torna ai risultati
+      </button>
+      <div id="dettagli-content">
+        <!-- generato da JS -->
+      </div>
     </section>
 
   </main>
