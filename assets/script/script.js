@@ -71,8 +71,9 @@ class Evento {
 // === API ===
 
 // funzione async cercaSquadre(query) che chiama /searchteams.php
-async function cercaSquadre(query) {
-  const url = `${API_BASE}searchteams.php?t=${query}`;
+async function cercaSquadre(query, sport = "") {
+  let url = `${API_BASE}searchteams.php?t=${query}`;
+  if (sport) url += `&s=${sport}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Errore HTTP ${res.status}`);
   const data = await res.json();
@@ -402,6 +403,9 @@ function renderPreferiti() {
 document.addEventListener("DOMContentLoaded", () => {
   const searchInput = $("#searchInput");
   const searchBtn = $("#searchBtn");
+  const filtriBtn = document.querySelectorAll(".btn-filtro");
+
+  let sportSelezionato = "";
 
   async function eseguiRicerca() {
     const query = searchInput.value.trim();
@@ -410,7 +414,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mostraCaricamento();
 
     try {
-      const squadre = await cercaSquadre(query);
+      const squadre = await cercaSquadre(query, sportSelezionato);
       renderRisultati(squadre);
     } catch (err) {
       mostraErrore(err.message);
@@ -436,6 +440,15 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     eseguiRicercaDebounce();
+  });
+
+  filtriBtn.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sportSelezionato = btn.dataset.sport;
+      filtriBtn.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (searchInput.value.trim()) eseguiRicerca();
+    });
   });
 
   renderPreferiti();
